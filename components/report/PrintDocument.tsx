@@ -93,7 +93,7 @@ export function PrintDocument({ d }: { d: ReportData }) {
             <tr>
               <th className="c-no">#</th>
               <th className="c-name">Müşteri</th>
-              <th className="c-phone">Telefon</th>
+              {/* <th className="c-phone">Telefon</th> */}
               {d.products.map((p) => (
                 <th key={p.key} className="r">
                   {p.urun}
@@ -138,7 +138,7 @@ export function PrintDocument({ d }: { d: ReportData }) {
                 </tr>
               );
             })}
-            <tr className="doc-total">
+            {/* <tr className="doc-total">
               <td colSpan={3}>Müşteride toplam</td>
               {d.products.map((p) => (
                 <td key={p.key} className="r num">
@@ -157,7 +157,7 @@ export function PrintDocument({ d }: { d: ReportData }) {
               ))}
               <td />
               <td className="r num">{fmtGram(d.toplamEmanet)}</td>
-            </tr>
+            </tr> */}
           </tbody>
         </table>
       )}

@@ -182,7 +182,7 @@ export function ScreenReport({ d }: { d: ReportData }) {
                       <strong>
                         {r.ad} {r.soyad}
                       </strong>
-                      {r.telefon && <small className="num">{r.telefon}</small>}
+                      {/* {r.telefon && <small className="num">{r.telefon}</small>} */}
                     </span>
                     <span className="chips">
                       {r.items.map((b) => (
