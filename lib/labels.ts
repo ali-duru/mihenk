@@ -23,5 +23,16 @@ const dateFmt = new Intl.DateTimeFormat("tr-TR", {
   timeZone: "Europe/Istanbul",
 });
 
+export type Birim = "gram" | "adet" | "para";
+
+const moneyFmt = new Intl.NumberFormat("tr-TR", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const SEMBOL: Record<string, string> = { TRY: "₺", USD: "$", EUR: "€" };
+
 export const fmtGram = (n: number) => gramFmt.format(n);
+/** 1.250,00 ₺ / 300,00 $ — bilinmeyen kodlarda kodun kendisi yazılır */
+export const fmtMoney = (n: number, kod?: string | null) =>
+  `${moneyFmt.format(n)} ${kod ? (SEMBOL[kod] ?? kod) : ""}`.trim();
 export const fmtDate = (s: string) => dateFmt.format(new Date(s));

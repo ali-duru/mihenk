@@ -5,6 +5,8 @@ import {
   HAREKET_TIPLERI,
   TIP_BILGI,
   fmtGram,
+  fmtMoney,
+  type Birim,
   type HareketTipi,
 } from "@/lib/labels";
 import { SubmitButton } from "./SubmitButton";
@@ -12,9 +14,10 @@ import { SubmitButton } from "./SubmitButton";
 export type ItemType = {
   id: string;
   ad: string;
-  birim: "gram" | "adet";
-  varsayilan_milyem: number;
+  birim: Birim;
+  varsayilan_milyem: number | null;
   birim_gram: number | null;
+  para_kodu: string | null;
 };
 
 export function MovementForm({
@@ -47,6 +50,7 @@ export function MovementForm({
     );
   }
 
+  const para = current?.birim === "para";
   const q = Number(qty.replace(",", "."));
   const m = Number(milyem);
   const gram =
@@ -83,7 +87,12 @@ export function MovementForm({
           onChange={(e) => {
             setTypeId(e.target.value);
             const next = types.find((t) => t.id === e.target.value);
-            if (next) setMilyem(String(next.varsayilan_milyem));
+            if (next)
+              setMilyem(
+                next.varsayilan_milyem == null
+                  ? ""
+                  : String(next.varsayilan_milyem),
+              );
           }}
         >
           {types.map((t) => (
@@ -94,35 +103,51 @@ export function MovementForm({
         </select>
       </label>
 
-      <div className="row2">
+      {para ? (
         <label className="field">
-          <span>{current?.birim === "adet" ? "Adet" : "Gram"}</span>
+          <span>Tutar ({current?.para_kodu})</span>
           <input
             name="miktar"
             required
-            inputMode={current?.birim === "adet" ? "numeric" : "decimal"}
+            inputMode="decimal"
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             className="num"
-            placeholder={current?.birim === "adet" ? "1" : "0,00"}
+            placeholder="0,00"
           />
-          {current?.birim === "adet" && (
-            <em>Adet başı {fmtGram(Number(current.birim_gram))} gr</em>
-          )}
+          <em>Para biriminde milyem ve has hesabı yapılmaz.</em>
         </label>
-        <label className="field">
-          <span>Milyem</span>
-          <input
-            name="milyem"
-            required
-            inputMode="numeric"
-            value={milyem}
-            onChange={(e) => setMilyem(e.target.value)}
-            className="num"
-          />
-          <em>22 ayar 916, 14 ayar 585</em>
-        </label>
-      </div>
+      ) : (
+        <div className="row2">
+          <label className="field">
+            <span>{current?.birim === "adet" ? "Adet" : "Gram"}</span>
+            <input
+              name="miktar"
+              required
+              inputMode={current?.birim === "adet" ? "numeric" : "decimal"}
+              value={qty}
+              onChange={(e) => setQty(e.target.value)}
+              className="num"
+              placeholder={current?.birim === "adet" ? "1" : "0,00"}
+            />
+            {current?.birim === "adet" && (
+              <em>Adet başı {fmtGram(Number(current.birim_gram))} gr</em>
+            )}
+          </label>
+          <label className="field">
+            <span>Milyem</span>
+            <input
+              name="milyem"
+              required
+              inputMode="numeric"
+              value={milyem}
+              onChange={(e) => setMilyem(e.target.value)}
+              className="num"
+            />
+            <em>22 ayar 916, 14 ayar 585</em>
+          </label>
+        </div>
+      )}
 
       <label className="field">
         <span>Açıklama</span>
@@ -135,7 +160,16 @@ export function MovementForm({
       </label>
 
       <p className="preview num" aria-live="polite">
-        Has karşılığı: <strong>{fmtGram(has)} gr</strong>
+        {para ? (
+          <>
+            Tutar:{" "}
+            <strong>{fmtMoney(q > 0 ? q : 0, current?.para_kodu)}</strong>
+          </>
+        ) : (
+          <>
+            Has karşılığı: <strong>{fmtGram(has)} gr</strong>
+          </>
+        )}
       </p>
 
       {state.error && (

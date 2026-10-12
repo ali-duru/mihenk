@@ -1,13 +1,30 @@
-import { IBM_Plex_Serif } from 'next/font/google';
-import { fmtGram } from '@/lib/labels';
-import { DURUM_ETIKET, SIRALA_ETIKET, fmtQty, type ReportData } from '@/lib/report';
+import { IBM_Plex_Serif } from "next/font/google";
+import { fmtGram } from "@/lib/labels";
+import {
+  DURUM_ETIKET,
+  SIRALA_ETIKET,
+  fmtCell,
+  fmtQty,
+  fmtTotal,
+  sheetCells,
+  unitLabel,
+  type ReportData,
+} from "@/lib/report";
 
-const serif = IBM_Plex_Serif({ subsets: ['latin', 'latin-ext'], weight: ['500', '600'], variable: '--font-plex-serif' });
+const serif = IBM_Plex_Serif({
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "600"],
+  variable: "--font-plex-serif",
+});
 
 /** A4 baskı belgesi: antetli başlık, özet, borç/emanet sütunlu döküm, ürün toplamları ve imza alanı */
 export function PrintDocument({ d }: { d: ReportData }) {
+  const yatay = d.products.length > 4; // çok ürün sütunu varsa A4 yatay
   return (
-    <article className={`doc ${serif.variable}`}>
+    <article
+      className={`doc ${serif.variable}${yatay ? " doc-landscape" : ""}`}
+    >
+      {yatay && <style>{"@page { size: A4 landscape; }"}</style>}
       <header className="doc-head">
         <div>
           <div className="doc-firm">{d.firma}</div>
@@ -15,10 +32,25 @@ export function PrintDocument({ d }: { d: ReportData }) {
         </div>
         <table className="doc-meta">
           <tbody>
-            <tr><th>Rapor tarihi</th><td>{d.tarih}</td></tr>
-            <tr><th>Kapsam</th><td>{DURUM_ETIKET[d.durum]}{d.q ? `, “${d.q}”` : ''}</td></tr>
-            <tr><th>Sıralama</th><td>{SIRALA_ETIKET[d.sirala]}</td></tr>
-            <tr><th>Kayıt</th><td>{d.rows.length} müşteri</td></tr>
+            <tr>
+              <th>Rapor tarihi</th>
+              <td>{d.tarih}</td>
+            </tr>
+            <tr>
+              <th>Kapsam</th>
+              <td>
+                {DURUM_ETIKET[d.durum]}
+                {d.q ? `, “${d.q}”` : ""}
+              </td>
+            </tr>
+            <tr>
+              <th>Sıralama</th>
+              <td>{SIRALA_ETIKET[d.sirala]}</td>
+            </tr>
+            <tr>
+              <th>Kayıt</th>
+              <td>{d.rows.length} müşteri</td>
+            </tr>
           </tbody>
         </table>
       </header>
@@ -38,8 +70,15 @@ export function PrintDocument({ d }: { d: ReportData }) {
             </td>
             <td>
               <span>Fark (borç − emanet)</span>
-              <strong>{d.toplamBorc - d.toplamEmanet < 0 ? '−' : ''}{fmtGram(Math.abs(d.toplamBorc - d.toplamEmanet))} gr has</strong>
-              <em>{d.toplamBorc >= d.toplamEmanet ? 'Firma lehine' : 'Müşteriler lehine'}</em>
+              <strong>
+                {d.toplamBorc - d.toplamEmanet < 0 ? "−" : ""}
+                {fmtGram(Math.abs(d.toplamBorc - d.toplamEmanet))} gr has
+              </strong>
+              <em>
+                {d.toplamBorc >= d.toplamEmanet
+                  ? "Firma lehine"
+                  : "Müşteriler lehine"}
+              </em>
             </td>
           </tr>
         </tbody>
@@ -49,53 +88,81 @@ export function PrintDocument({ d }: { d: ReportData }) {
       {d.rows.length === 0 ? (
         <p className="doc-empty">Bu kapsamda açık bakiyesi olan müşteri yok.</p>
       ) : (
-        <table className="doc-tbl">
-          <colgroup>
-            <col style={{ width: '6%' }} />
-            <col style={{ width: '22%' }} />
-            <col style={{ width: '15%' }} />
-            <col />
-            <col style={{ width: '13%' }} />
-            <col style={{ width: '13%' }} />
-          </colgroup>
+        <table className="doc-tbl doc-sheet">
           <thead>
             <tr>
-              <th>Sıra</th>
-              <th>Müşteri</th>
-              <th>Telefon</th>
-              <th>Ürün dökümü</th>
-              <th className="r">Borç<br />gr has</th>
-              <th className="r">Emanet<br />gr has</th>
+              <th className="c-no">#</th>
+              <th className="c-name">Müşteri</th>
+              <th className="c-phone">Telefon</th>
+              {d.products.map((p) => (
+                <th key={p.key} className="r">
+                  {p.urun}
+                  <br />
+                  <span className="doc-sub">{unitLabel(p)}</span>
+                </th>
+              ))}
+              <th className="r">
+                Borç
+                <br />
+                <span className="doc-sub">gr has</span>
+              </th>
+              <th className="r">
+                Emanet
+                <br />
+                <span className="doc-sub">gr has</span>
+              </th>
             </tr>
           </thead>
           <tbody>
-            {d.rows.map((r, i) => (
-              <tr key={r.id}>
-                <td className="num">{i + 1}</td>
-                <td>{r.ad} {r.soyad}</td>
-                <td className="num">{r.telefon}</td>
-                <td>
-                  {r.items.map((b) => (
-                    <div key={`${b.urun}-${b.milyem}`} className="doc-item">
-                      <span className="num">{b.net_has > 0 ? '+' : '−'}</span> {b.urun} ({b.milyem}){' '}
-                      <span className="num">{fmtQty(b.birim, b.birim === 'adet' ? b.net_adet : b.net_gram, fmtGram)}</span>
-                    </div>
-                  ))}
-                </td>
-                <td className="r num">{r.net > 0 ? fmtGram(r.net) : ''}</td>
-                <td className="r num">{r.net < 0 ? fmtGram(Math.abs(r.net)) : ''}</td>
-              </tr>
-            ))}
+            {d.rows.map((r, i) => {
+              const cells = sheetCells(r);
+              return (
+                <tr key={r.id}>
+                  <td className="num">{i + 1}</td>
+                  <td>
+                    {r.ad} {r.soyad}
+                  </td>
+                  {/* <td className="num">{r.telefon ?? ""}</td> */}
+                  {d.products.map((p) => {
+                    const c = cells.get(p.key);
+                    return (
+                      <td key={p.key} className="r num">
+                        {c ? fmtCell(c, fmtGram) : ""}
+                      </td>
+                    );
+                  })}
+                  <td className="r num">{r.net > 0 ? fmtGram(r.net) : ""}</td>
+                  <td className="r num">
+                    {r.net < 0 ? fmtGram(Math.abs(r.net)) : ""}
+                  </td>
+                </tr>
+              );
+            })}
             <tr className="doc-total">
-              <td colSpan={4}>Toplam</td>
+              <td colSpan={3}>Müşteride toplam</td>
+              {d.products.map((p) => (
+                <td key={p.key} className="r num">
+                  {p.musteride ? fmtTotal(p, p.musteride, fmtGram) : ""}
+                </td>
+              ))}
               <td className="r num">{fmtGram(d.toplamBorc)}</td>
+              <td />
+            </tr>
+            <tr className="doc-total">
+              <td colSpan={3}>Emanette toplam</td>
+              {d.products.map((p) => (
+                <td key={p.key} className="r num">
+                  {p.emanette ? `−${fmtTotal(p, p.emanette, fmtGram)}` : ""}
+                </td>
+              ))}
+              <td />
               <td className="r num">{fmtGram(d.toplamEmanet)}</td>
             </tr>
           </tbody>
         </table>
       )}
 
-      {d.products.length > 0 && (
+      {/* {d.products.length > 0 && (
         <section className="doc-keep">
           <h2 className="doc-h2">Ürün bazında toplamlar</h2>
           <table className="doc-tbl">
@@ -113,29 +180,51 @@ export function PrintDocument({ d }: { d: ReportData }) {
               {d.products.map((p) => (
                 <tr key={p.key}>
                   <td>{p.urun}</td>
-                  <td className="r num">{p.milyem}</td>
-                  <td className="r num">{p.musteride ? fmtQty(p.birim, p.musteride, fmtGram) : ''}</td>
-                  <td className="r num">{p.musterideHas ? fmtGram(p.musterideHas) : ''}</td>
-                  <td className="r num">{p.emanette ? fmtQty(p.birim, p.emanette, fmtGram) : ''}</td>
-                  <td className="r num">{p.emanetteHas ? fmtGram(p.emanetteHas) : ''}</td>
+                  <td className="r num">{p.milyem ?? ""}</td>
+                  <td className="r num">
+                    {p.musteride
+                      ? fmtQty(p.birim, p.musteride, fmtGram, p.para_kodu)
+                      : ""}
+                  </td>
+                  <td className="r num">
+                    {p.musterideHas ? fmtGram(p.musterideHas) : ""}
+                  </td>
+                  <td className="r num">
+                    {p.emanette
+                      ? fmtQty(p.birim, p.emanette, fmtGram, p.para_kodu)
+                      : ""}
+                  </td>
+                  <td className="r num">
+                    {p.emanetteHas ? fmtGram(p.emanetteHas) : ""}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </section>
-      )}
+      )} */}
 
-      <footer className="doc-keep doc-foot">
+      {/* <footer className="doc-keep doc-foot">
         <p>
-          Borç sütunu müşterinin firmaya olan borcunu, emanet sütunu firmada duran müşteri emanetini gösterir.
-          Has karşılığı gram × milyem / 1000 ile hesaplanır. Ürün dökümünde + müşteride duran, − emanette duran malı ifade eder.
+          Borç sütunu müşterinin firmaya olan borcunu, emanet sütunu firmada
+          duran müşteri emanetini gösterir. Has karşılığı gram × milyem / 1000
+          ile hesaplanır; para birimleri has toplamına katılmaz. Ürün
+          sütunlarında işaretsiz değer müşteride duran, − işaretli değer
+          emanette duran malı gösterir; boş hücre o üründe hareket olmadığını
+          belirtir.
         </p>
         <div className="doc-sign">
-          <div><span>Hazırlayan</span></div>
-          <div><span>Kontrol eden</span></div>
-          <div><span>Tarih ve kaşe</span></div>
+          <div>
+            <span>Hazırlayan</span>
+          </div>
+          <div>
+            <span>Kontrol eden</span>
+          </div>
+          <div>
+            <span>Tarih ve kaşe</span>
+          </div>
         </div>
-      </footer>
+      </footer> */}
     </article>
   );
 }

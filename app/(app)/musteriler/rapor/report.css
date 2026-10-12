@@ -135,3 +135,64 @@
   .doc-keep { break-inside: avoid; }
   .doc-h2 { break-after: avoid; }
 }
+
+/* =========================================================
+   Excel düzeni: müşteri başına satır, ürün başına sütun
+   ========================================================= */
+.sheet-wrap {
+  overflow: auto; max-height: min(70vh, 760px);
+  background: var(--yuzey); border: 1px solid #BFC5C0; border-radius: 6px;
+}
+.sheet-wrap:focus-visible { outline: 2px solid var(--altin); outline-offset: 2px; }
+.sheet { border-collapse: separate; border-spacing: 0; font-size: .88rem; min-width: 100%; }
+.sheet th, .sheet td {
+  border-right: 1px solid #DDE1DC; border-bottom: 1px solid #DDE1DC;
+  padding: .38rem .6rem; white-space: nowrap; background: var(--yuzey);
+}
+.sheet .r { text-align: right; }
+
+/* Başlık satırı: sabit */
+.sheet thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: #EEF0EC; color: var(--murekkep); font-weight: 600; font-size: .8rem;
+  text-align: left; vertical-align: bottom; border-bottom: 1px solid #BFC5C0;
+}
+.sheet thead th small { display: block; font-weight: 400; color: var(--soluk); font-size: .74rem; }
+.sheet thead .sh-prod, .sheet thead .sh-sum { text-align: right; min-width: 6.5rem; }
+
+/* Sıra ve müşteri sütunları: yatay kaydırmada sabit */
+.sheet .sh-no {
+  position: sticky; left: 0; z-index: 1; width: 2.6rem; min-width: 2.6rem;
+  text-align: right; color: var(--soluk); background: #F4F5F2; font-size: .78rem;
+}
+.sheet .sh-name {
+  position: sticky; left: 2.6rem; z-index: 1; min-width: 11rem;
+  box-shadow: inset -1px 0 0 #BFC5C0;
+}
+.sheet thead .sh-no, .sheet thead .sh-name { z-index: 3; background: #E6E9E4; }
+.sheet .sh-name a { text-decoration: none; font-weight: 500; }
+.sheet .sh-name a:hover { text-decoration: underline; text-underline-offset: 2px; }
+.sheet .sh-phone { color: var(--soluk); }
+.sheet .sh-sum { background: #FAFAF8; font-weight: 600; }
+.sheet thead .sh-sum { box-shadow: inset 1px 0 0 #BFC5C0; }
+
+/* Satır vurgusu */
+.sheet tbody tr:hover td, .sheet tbody tr:hover .sh-name { background: #FBF6E8; }
+.sheet tbody tr:hover .sh-no { background: #F3EBD2; }
+
+/* Toplam satırları: altta sabit */
+.sheet tfoot th, .sheet tfoot td {
+  position: sticky; z-index: 1; background: #EEF0EC; font-weight: 600;
+}
+.sheet tfoot tr:first-child > * { bottom: 2.05rem; border-top: 1.5px solid var(--murekkep); }
+.sheet tfoot tr:last-child > * { bottom: 0; }
+.sheet tfoot .sh-name { text-align: left; z-index: 2; }
+.sheet tfoot .sh-no { z-index: 2; background: #E6E9E4; }
+
+/* ---------- Baskı: aynı tablo düzeni ---------- */
+.doc-sheet { table-layout: auto; }
+.doc-sheet th, .doc-sheet td { white-space: nowrap; }
+.doc-sheet .c-name { width: 1%; }
+.doc-sub { font-weight: 400; color: #555; font-size: 7pt; }
+.doc-landscape .doc-sheet { font-size: 8.5pt; }
+.paper:has(.doc-landscape) { width: 297mm; min-height: 210mm; }
