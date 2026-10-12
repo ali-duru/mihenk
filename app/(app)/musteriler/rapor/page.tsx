@@ -12,7 +12,7 @@ import { ReportFrame } from "@/components/report/ReportFrame";
 import { ScreenReport } from "@/components/report/ScreenReport";
 import { PrintDocument } from "@/components/report/PrintDocument";
 
-import "report.css";
+import "./report.css";
 
 const PAGE = 1000; // PostgREST tek sorguda en fazla 1000 satır döndürür
 
